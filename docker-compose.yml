@@ -1,0 +1,61 @@
+version: '2.2'
+services:
+  discovery-service:
+    container_name: discovery-service
+    build:
+      context: ./discovery-service
+      dockerfile: Dockerfile
+    image: sridhar2193/discovery-service:1.0
+    expose:
+      - 8761
+    ports:
+      - 8761:8761
+    networks:
+      - microservice-network
+  starwars-service:
+    container_name: starwars-service
+    build:
+      context: ./starwars-service
+      dockerfile: Dockerfile
+    image: sridhar2193/starwars-service:1.0
+    expose:
+      - 8081
+    ports:
+      - 8081:8081
+    networks:
+      - microservice-network
+    environment:
+      EUREKA_URI: http://discovery-service:8761/eureka
+      EUREKA_INSTANCE_PREFER_IP_ADDRESS: "true"
+    links:
+      - discovery-service:discovery-service
+      - gateway-service:gateway-service
+    depends_on:
+      - discovery-service
+      - gateway-service
+    logging:
+      driver: json-file
+  gateway-service:
+    container_name: gateway-service
+    build:
+      context: ./gateway-service
+      dockerfile: Dockerfile
+    image: sridhar2193/gateway-service:1.0
+    expose:
+      - 8765
+    ports:
+      - 8765:8765
+    networks:
+      - microservice-network
+    environment:
+      EUREKA_URI: http://discovery-service:8761/eureka
+      EUREKA_INSTANCE_PREFER_IP_ADDRESS: "true"
+    links:
+      - discovery-service:discovery-service
+    depends_on:
+      - discovery-service
+    logging:
+      driver: json-file
+networks:
+  microservice-network:
+    driver: bridge
